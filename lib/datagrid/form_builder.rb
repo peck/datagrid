@@ -43,25 +43,27 @@ module Datagrid
       text_field filter.name, options.reverse_merge(:value => object.filter_value_as_string(filter))
     end
 
-    def datagrid_enum_filter(attribute_or_filter, options = {}, &block)
+    
+       def datagrid_enum_filter(attribute_or_filter, options = {}, &block)
       filter = datagrid_get_filter(attribute_or_filter)
       if filter.checkboxes?
         options = add_html_classes(options, 'checkboxes')
-        filter.select(object).map do |element|
+        ("<div><ol>"+ filter.select(object).map do |element|
           text, value = @template.send(:option_text_and_value, element)
           id = [object_name, filter.name, value].join('_').underscore
           html_options = datagrid_extra_checkbox_options.reverse_merge(
             :id => id, :multiple => true, :checked => enum_checkbox_checked?(filter, value)
           )
           input = check_box(filter.name, html_options, value.to_s, nil)
-          label(filter.name, input + text, options.reverse_merge(:for => id))
-        end.join("\n").html_safe
+          label = label(filter.name, text, options.reverse_merge(:for => id))
+          "<li>"+input + label+"</li>"
+        end.join("\n") + "</ol></div>").html_safe
       else
         if !options.has_key?(:multiple) && filter.multiple?
           options[:multiple] = true
         end
         select(
-          filter.name, 
+          filter.name,
           filter.select(object) || [],
           {:include_blank => filter.include_blank,
            :prompt => filter.prompt,
@@ -70,6 +72,8 @@ module Datagrid
         )
       end
     end
+
+
 
     def enum_checkbox_checked?(filter, option_value)
       current_value = object.send(filter.name)
